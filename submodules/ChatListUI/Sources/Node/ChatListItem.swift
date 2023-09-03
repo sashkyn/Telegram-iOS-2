@@ -176,6 +176,8 @@ public enum ChatListItemContent {
     }
 }
 
+// HINT: Item
+
 public class ChatListItem: ListViewItem, ChatListSearchItemNeighbour {
     let presentationData: ChatListPresentationData
     let context: AccountContext
@@ -249,6 +251,8 @@ public class ChatListItem: ListViewItem, ChatListSearchItemNeighbour {
             }
         }
     }
+    
+    // HINT: обновлнение ноды во время вставки или удаления чат айтема
     
     public func updateNode(async: @escaping (@escaping () -> Void) -> Void, node: @escaping () -> ListViewItemNode, params: ListViewItemLayoutParams, previousItem: ListViewItem?, nextItem: ListViewItem?, animation: ListViewItemUpdateAnimation, completion: @escaping (ListViewItemNodeLayout, @escaping (ListViewItemApply) -> Void) -> Void) {
         Queue.mainQueue().async {
@@ -424,6 +428,9 @@ private func revealOptions(strings: PresentationStrings, theme: PresentationThem
     }
     return options
 }
+
+// HINT: что то похожее на опции Archived айтема.
+// А это Action-items. Учтем.
 
 private func groupReferenceRevealOptions(strings: PresentationStrings, theme: PresentationTheme, isEditing: Bool, hiddenByDefault: Bool) -> [ItemListRevealOption] {
     var options: [ItemListRevealOption] = []
@@ -670,6 +677,8 @@ private final class ChatListMediaPreviewNode: ASDisplayNode {
 }
 
 private let loginCodeRegex = try? NSRegularExpression(pattern: "[\\d\\-]{5,7}", options: [])
+
+// HINT: эта вьюшка используется для любого элемента чата, в том числе и для Архивной ячейки
 
 class ChatListItemNode: ItemListRevealOptionsItemNode {
     final class TopicItemNode: ASDisplayNode {
@@ -950,7 +959,7 @@ class ChatListItemNode: ItemListRevealOptionsItemNode {
     private var textArrowNode: ASImageNode?
     private var compoundTextButtonNode: HighlightTrackingButtonNode?
     let measureNode: TextNode
-    private var currentItemHeight: CGFloat?
+    private var currentItemHeight: CGFloat? // HINT: высота элемента
     let forwardedIconNode: ASImageNode
     let textNode: TextNodeWithEntities
     var dustNode: InvisibleInkDustNode?
@@ -2682,6 +2691,8 @@ class ChatListItemNode: ItemListRevealOptionsItemNode {
             
             let titleSpacing: CGFloat = -1.0
             let authorSpacing: CGFloat = -3.0
+            
+            // HINT: итоговый расчет высоты элемента чата
             var itemHeight: CGFloat = 8.0 * 2.0 + 1.0
             itemHeight -= 21.0
             itemHeight += titleLayout.size.height
@@ -3831,6 +3842,8 @@ class ChatListItemNode: ItemListRevealOptionsItemNode {
             self?.updateIsHighlighted(transition: .immediate)
         })
     }
+    
+    // HINT: проигрывается архивная анимация только для Archived Chats элементов, для остальных игнорируется
     
     func playArchiveAnimation() {
         guard let item = self.item, case .groupReference = item.content else {

@@ -10,6 +10,9 @@ import AccountContext
 import TelegramCore
 import StoryPeerListComponent
 
+// TODO: починить поиск
+// HINT: навигейшен в чате
+
 public final class ChatListNavigationBar: Component {
     public final class AnimationHint {
         let disableStoriesAnimations: Bool
@@ -40,6 +43,7 @@ public final class ChatListNavigationBar: Component {
     public let activateSearch: (NavigationBarSearchContentNode) -> Void
     public let openStatusSetup: (UIView) -> Void
     public let allowAutomaticOrder: () -> Void
+    public let insertArchiveItem: () -> Void
     
     public init(
         context: AccountContext,
@@ -60,7 +64,8 @@ public final class ChatListNavigationBar: Component {
         accessoryPanelContainerHeight: CGFloat,
         activateSearch: @escaping (NavigationBarSearchContentNode) -> Void,
         openStatusSetup: @escaping (UIView) -> Void,
-        allowAutomaticOrder: @escaping () -> Void
+        allowAutomaticOrder: @escaping () -> Void,
+        insertArchiveItem: @escaping () -> Void
     ) {
         self.context = context
         self.theme = theme
@@ -81,6 +86,7 @@ public final class ChatListNavigationBar: Component {
         self.activateSearch = activateSearch
         self.openStatusSetup = openStatusSetup
         self.allowAutomaticOrder = allowAutomaticOrder
+        self.insertArchiveItem = allowAutomaticOrder
     }
 
     public static func ==(lhs: ChatListNavigationBar, rhs: ChatListNavigationBar) -> Bool {
@@ -177,6 +183,8 @@ public final class ChatListNavigationBar: Component {
         private weak var disappearingTabsView: UIView?
         private var disappearingTabsViewSearch: Bool = false
         
+        private var archyNode = ArchyNode()
+        
         private var currentHeaderComponent: ChatListHeaderComponent?
         
         override public init(frame: CGRect) {
@@ -219,6 +227,8 @@ public final class ChatListNavigationBar: Component {
             }
         }
         
+        // HINT: так можно сюда запихать архивный айтем
+        
         public func applyScroll(offset: CGFloat, allowAvatarsExpansion: Bool, forceUpdate: Bool = false, transition: Transition) {
             let transition = transition
             
@@ -243,15 +253,20 @@ public final class ChatListNavigationBar: Component {
             let searchOffsetDistance: CGFloat = ChatListNavigationBar.searchScrollHeight
             
             let minContentOffset: CGFloat = ChatListNavigationBar.searchScrollHeight
-            
             let clippedScrollOffset = min(minContentOffset, offset)
+            
             if self.clippedScrollOffset == clippedScrollOffset && !self.hasDeferredScrollOffset && !forceUpdate && !allowAvatarsExpansionUpdated {
                 return
             }
             self.hasDeferredScrollOffset = false
             self.clippedScrollOffset = clippedScrollOffset
             
-            let visibleSize = CGSize(width: currentLayout.size.width, height: max(0.0, currentLayout.size.height - clippedScrollOffset))
+            // HINT: сделал так, чтобы навигейшен больше не ездил за списком чатов
+            
+            let visibleSize = CGSize(
+                width: currentLayout.size.width,
+                height: min(195.0, max(0.0, currentLayout.size.height - clippedScrollOffset))
+            )
             
             let previousHeight = self.separatorLayer.position.y
             
@@ -506,6 +521,27 @@ public final class ChatListNavigationBar: Component {
                 
                 tabsNodeTransition.setFrameWithAdditivePosition(view: accessoryPanelContainer.view, frame: accessoryPanelContainerFrame)
             }
+            
+            // HINT: ключевой контейнер для арчиайтема
+            
+            if archyNode.view.superview !== self {
+                self.archyNode.theme = component.theme
+                self.addSubview(archyNode.view)
+            }
+            
+            let minimumArchyHeight: CGFloat = archyNode.requestToShowArchive ? ContestHelper.shared.chatItemHeight : 0.0
+            let archyFrame = CGRect(
+                x: 0.0,
+                y: tabsFrame.maxY,
+                width: tabsFrame.width,
+                height: max(minimumArchyHeight, -offset)
+            )
+            
+            transition.setFrame(view: archyNode.view, frame: archyFrame)
+            archyNode.updateLayout(
+                size: archyFrame.size,
+                transition: .immediate
+            )
         }
         
         public func updateStoryUploadProgress(storyUploadProgress: Float?) {
@@ -532,7 +568,8 @@ public final class ChatListNavigationBar: Component {
                     accessoryPanelContainerHeight: component.accessoryPanelContainerHeight,
                     activateSearch: component.activateSearch,
                     openStatusSetup: component.openStatusSetup,
-                    allowAutomaticOrder: component.allowAutomaticOrder
+                    allowAutomaticOrder: component.allowAutomaticOrder,
+                    insertArchiveItem: component.insertArchiveItem
                 )
                 if let currentLayout = self.currentLayout, let headerComponent = self.currentHeaderComponent {
                     let headerComponent = ChatListHeaderComponent(

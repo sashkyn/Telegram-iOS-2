@@ -36,3 +36,30 @@ extension BotInfo {
         }
     }
 }
+
+// HINT: волшебный синглтон
+
+public final class ContestHelper {
+    
+    public static var shared = ContestHelper()
+    
+    public var isUserLeaveChatListScroll: Bool = true
+    
+    public var needToShowArchiveInChat: Bool = false
+    
+    public var chatItemHeight: CGFloat = 80.0
+    
+    public func didStartScrollChatList() {
+        isUserLeaveChatListScroll = false
+        debug("didStartScrollChatList")
+    }
+    
+    public func didUserLeaveChatListScroll() {
+        isUserLeaveChatListScroll = true
+        debug("didUserLeaveChatListScroll")
+    }
+    
+    public func debug(_ text: String) {
+        print("ContestHelper: debug - \(text)")
+    }
+}

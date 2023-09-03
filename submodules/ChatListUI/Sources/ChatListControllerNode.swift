@@ -762,6 +762,8 @@ private final class ChatListContainerItemNode: ASDisplayNode {
     }
 }
 
+// HINT: Нода контейра списка чатов, хз что это
+
 public final class ChatListContainerNode: ASDisplayNode, UIGestureRecognizerDelegate {
     private let context: AccountContext
     private weak var controller: ChatListControllerImpl?
@@ -2077,6 +2079,9 @@ final class ChatListControllerNode: ASDisplayNode, UIGestureRecognizerDelegate {
                         return
                     }
                     controller.allowAutomaticOrder()
+                },
+                insertArchiveItem: {
+                    print("heheh: insert tut") // HINT:
                 }
             )),
             environment: {},
@@ -2419,11 +2424,24 @@ final class ChatListControllerNode: ASDisplayNode, UIGestureRecognizerDelegate {
         }
     }
     
+    // HINT: меняется контент по скролу тут
+    
     private func contentOffsetChanged(offset: ListViewVisibleContentOffset, listView: ListView, isPrimary: Bool) {
         guard let containerLayout = self.containerLayout else {
             return
         }
+        //ContestHelper.shared.onScroll(offset: offset)
         self.updateNavigationScrolling(navigationHeight: containerLayout.navigationBarHeight, transition: self.tempNavigationScrollingTransition ?? .immediate)
+        
+        if case let .known(value) = offset,
+           value < ContestHelper.shared.chatItemHeight,
+           ContestHelper.shared.needToShowArchiveInChat {
+            DispatchQueue.main.asyncAfter(
+                deadline: DispatchTime.now() + 0.16,
+                execute: { [weak self] in
+                    self?.mainContainerNode.currentItemNode.revealScrollHiddenItem()
+            })
+        }
         
         if listView.isDragging {
             var overscrollSelectedId: EnginePeer.Id?
@@ -2475,6 +2493,8 @@ final class ChatListControllerNode: ASDisplayNode, UIGestureRecognizerDelegate {
                             overscrollHiddenChatItemsAllowed = true
                         }
                     }
+                    
+                    // HINT: здесь добавляется айтем
                 
                     if overscrollHiddenChatItemsAllowed {
                         if self.allowOverscrollItemExpansion {
@@ -2483,14 +2503,15 @@ final class ChatListControllerNode: ASDisplayNode, UIGestureRecognizerDelegate {
                             } else {
                                 self.currentOverscrollItemExpansionTimestamp = timestamp
                             }
-                            
+
                             if let currentOverscrollItemExpansionTimestamp = self.currentOverscrollItemExpansionTimestamp, currentOverscrollItemExpansionTimestamp <= timestamp - 0.0 {
                                 self.allowOverscrollItemExpansion = false
-                                
+
                                 if isPrimary {
-                                    self.mainContainerNode.currentItemNode.revealScrollHiddenItem()
+                                    // HINT !!!
+                                    //self.mainContainerNode.currentItemNode.revealScrollHiddenItem()
                                 } else {
-                                    self.inlineStackContainerNode?.currentItemNode.revealScrollHiddenItem()
+                                    //self.inlineStackContainerNode?.currentItemNode.revealScrollHiddenItem()
                                 }
                             }
                         }
@@ -2504,16 +2525,16 @@ final class ChatListControllerNode: ASDisplayNode, UIGestureRecognizerDelegate {
         if abs(velocity) > 0.8 {
             return false
         }
-        
+
         if !isPrimary || self.inlineStackContainerNode == nil {
         } else {
             return false
         }
-        
+
         guard let navigationBarComponentView = self.navigationBarView.view as? ChatListNavigationBar.View else {
             return false
         }
-        
+
         if let clippedScrollOffset = navigationBarComponentView.clippedScrollOffset {
             let searchScrollOffset = clippedScrollOffset
             if searchScrollOffset > 0.0 && searchScrollOffset < ChatListNavigationBar.searchScrollHeight {
@@ -2522,11 +2543,14 @@ final class ChatListControllerNode: ASDisplayNode, UIGestureRecognizerDelegate {
                 return true
             }
         }
-        
+
         return false
     }
     
+    // HINT: начало скрола
+    
     private func didBeginInteractiveDragging(listView: ListView, isPrimary: Bool) {
+        ContestHelper.shared.didStartScrollChatList()
         if isPrimary {
             if let chatListNode = listView as? ChatListNode, !chatListNode.hasItemsToBeRevealed() {
                 self.allowOverscrollStoryExpansion = true
@@ -2536,6 +2560,8 @@ final class ChatListControllerNode: ASDisplayNode, UIGestureRecognizerDelegate {
         }
         self.allowOverscrollItemExpansion = true
     }
+    
+    // HINT: конец скрола
     
     private func endedInteractiveDragging(listView: ListView, isPrimary: Bool) {
         if isPrimary {

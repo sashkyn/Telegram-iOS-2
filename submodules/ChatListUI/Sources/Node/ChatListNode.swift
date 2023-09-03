@@ -245,7 +245,7 @@ public struct ChatListNodeState: Equatable {
     public var peerInputActivities: ChatListNodePeerInputActivities?
     public var pendingRemovalItemIds: Set<ItemId>
     public var pendingClearHistoryPeerIds: Set<ItemId>
-    public var hiddenItemShouldBeTemporaryRevealed: Bool
+    public var hiddenItemShouldBeTemporaryRevealed: Bool // HINT: вот флаг по которому определяется показывать арчи или нет
     public var selectedAdditionalCategoryIds: Set<Int>
     public var hiddenPsaPeerId: EnginePeer.Id?
     public var foundPeers: [(EnginePeer, EnginePeer?)]
@@ -1141,6 +1141,8 @@ public final class ChatListNode: ListView {
     private var dequeuedInitialTransitionOnLayout = false
     private var enqueuedTransition: (ChatListNodeListViewTransition, () -> Void)?
     
+    // HINT: при скроле списка вниз меняется вот этот стейт
+    
     public private(set) var currentState: ChatListNodeState
     private let statePromise: ValuePromise<ChatListNodeState>
     public var state: Signal<ChatListNodeState, NoError> {
@@ -1634,6 +1636,8 @@ public final class ChatListNode: ListView {
         }
         |> distinctUntilChanged
         
+        // HINT: это срабатывает при открытии Archived Chats, это нам не надо.
+        
         let displayArchiveIntro: Signal<Bool, NoError>
         if case .chatList(.archive) = location {
             let displayArchiveIntroData = context.sharedContext.accountManager.noticeEntry(key: ApplicationSpecificNotice.archiveIntroDismissedKey())
@@ -1910,16 +1914,18 @@ public final class ChatListNode: ListView {
         
         let accountPeerId = context.account.peerId
         
+        // HINT: формирование транзишиона
+        
         let chatListNodeViewTransition = combineLatest(
             queue: viewProcessingQueue,
-            hideArchivedFolderByDefault,
-            displayArchiveIntro,
-            storageInfo,
-            suggestedChatListNotice,
-            savedMessagesPeer,
-            chatListViewUpdate,
-            self.statePromise.get(),
-            contacts
+            hideArchivedFolderByDefault.debug("chatListNodeViewTransition - hideArchivedFolderByDefault"),
+            displayArchiveIntro.debug("chatListNodeViewTransition - displayArchiveIntro"),
+            storageInfo.debug("chatListNodeViewTransition - storageInfo"),
+            suggestedChatListNotice.debug("chatListNodeViewTransition - suggestedChatListNotice"),
+            savedMessagesPeer.debug("chatListNodeViewTransition - savedMessagesPeer"),
+            chatListViewUpdate.debug("chatListNodeViewTransition - chatListViewUpdate"),
+            self.statePromise.get().debug("chatListNodeViewTransition - statePromise"),
+            contacts.debug("chatListNodeViewTransition - contacts")
         )
         |> mapToQueue { (hideArchivedFolderByDefault, displayArchiveIntro, storageInfo, suggestedChatListNotice, savedMessagesPeer, updateAndFilter, state, contacts) -> Signal<ChatListNodeListViewTransition, NoError> in
             let (update, filter) = updateAndFilter
@@ -2375,6 +2381,13 @@ public final class ChatListNode: ListView {
                 }
             }
             
+            // HINT: вот здесь происходит изменение после вставки любого итема, включая архивный
+            // то есть это просто вставка, как будт появился новый чат, для списка нет разницы
+            
+            // HINT: disable animations
+            
+            // disableAnimations = true
+            
             return preparedChatListNodeViewTransition(from: previousView, to: processedView, reason: reason, previewing: previewing, disableAnimations: disableAnimations, account: context.account, scrollPosition: updatedScrollPosition, searchMode: searchMode)
             |> map({ mappedChatListNodeViewListTransition(context: context, nodeInteraction: nodeInteraction, location: location, filterData: filterData, mode: mode, isPeerEnabled: isPeerEnabled, transition: $0) })
             |> runOn(prepareOnMainQueue ? Queue.mainQueue() : viewProcessingQueue)
@@ -2826,6 +2839,12 @@ public final class ChatListNode: ListView {
             }
         }
         
+        // HINT: пальцы убраны с экрана
+        
+        self.didFingerRemovedFromView = {
+            ContestHelper.shared.didUserLeaveChatListScroll()
+        }
+        
         self.scrollToTopOptionPromise.set(combineLatest(
             renderedTotalUnreadCount(accountManager: self.context.sharedContext.accountManager, engine: self.context.engine) |> deliverOnMainQueue,
             self.scrolledAtTop.get()
@@ -2873,6 +2892,8 @@ public final class ChatListNode: ListView {
             return strongSelf.isSelectionGestureEnabled
         }
         self.view.addGestureRecognizer(selectionRecognizer)
+        
+        // HINT: конец инита
     }
     
     deinit {
@@ -2912,6 +2933,8 @@ public final class ChatListNode: ListView {
         
         return isHiddenItemVisible
     }
+    
+    // HINT: показать скрытый айтем
     
     func revealScrollHiddenItem() {
         var isHiddenItemVisible = false
@@ -2998,6 +3021,8 @@ public final class ChatListNode: ListView {
             }
         }
     }
+    
+    // HINT: вызывается вот этот метод конкретно при появлении и удалении элемента из чата
     
     public func updateState(_ f: (ChatListNodeState) -> ChatListNodeState) {
         let state = f(self.currentState)
@@ -3923,13 +3948,13 @@ public class ChatHistoryListSelectionRecognizer: UIPanGestureRecognizer {
     public override func touchesMoved(_ touches: Set<UITouch>, with event: UIEvent) {
         let location = touches.first!.location(in: self.view)
         let translation = location.offsetBy(dx: -self.initialLocation.x, dy: -self.initialLocation.y)
-        
+
         let touchesArray = Array(touches)
         if self.recognized == nil, touchesArray.count == 2 {
             if let firstTouch = touchesArray.first, let secondTouch = touchesArray.last {
                 let firstLocation = firstTouch.location(in: self.view)
                 let secondLocation = secondTouch.location(in: self.view)
-                
+
                 func distance(_ v1: CGPoint, _ v2: CGPoint) -> CGFloat {
                     let dx = v1.x - v2.x
                     let dy = v1.y - v2.y
@@ -3943,7 +3968,7 @@ public class ChatHistoryListSelectionRecognizer: UIPanGestureRecognizer {
                 self.recognized = true
             }
         }
-        
+
         if let recognized = self.recognized, recognized {
             super.touchesMoved(touches, with: event)
         }

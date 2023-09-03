@@ -374,6 +374,8 @@ public enum GradientImageDirection {
     case horizontal
 }
 
+// HINT: генерация градиента в картинке
+
 public func generateGradientImage(size: CGSize, scale: CGFloat = 0.0, colors: [UIColor], locations: [CGFloat], direction: GradientImageDirection = .vertical) -> UIImage? {
     guard colors.count == locations.count else {
         return nil

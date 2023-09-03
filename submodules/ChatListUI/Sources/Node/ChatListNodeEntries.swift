@@ -693,7 +693,7 @@ func chatListNodeEntriesForView(view: EngineChatList, state: ChatListNodeState, 
             autoremoveTimeout: entry.autoremoveTimeout,
             forumTopicData: entry.forumTopicData,
             topForumTopicItems: entry.topForumTopicItems,
-            revealed: threadId == 1 && (state.hiddenItemShouldBeTemporaryRevealed || state.editing),
+            revealed: threadId == 1 && (state.hiddenItemShouldBeTemporaryRevealed || state.editing), // HINT: вот это место для появления!
             storyState: entry.renderedPeer.peerId == accountPeerId ? nil : entry.storyStats.flatMap { stats -> ChatListNodeState.StoryState in
                 return ChatListNodeState.StoryState(
                     stats: stats,
@@ -855,7 +855,7 @@ func chatListNodeEntriesForView(view: EngineChatList, state: ChatListNodeState, 
                     message: groupReference.topMessage,
                     editing: state.editing,
                     unreadCount: groupReference.unreadCount,
-                    revealed: state.hiddenItemShouldBeTemporaryRevealed,
+                    revealed: state.hiddenItemShouldBeTemporaryRevealed, // HINT: вот тут все таки появляется
                     hiddenByDefault: hideArchivedFolderByDefault,
                     storyState: mappedStoryState
                 )))

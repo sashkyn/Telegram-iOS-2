@@ -82,4 +82,25 @@ public final class Signal<T, E> {
             return EmptyDisposable
         }
     }
+    
+    public func debug(_ identifier: String) -> Signal<T, E> {
+            return Signal<T, E> { subscriber in
+                let disposable = self.start(
+                    next: { value in
+                        print("Debug - \(identifier): Next event - \(value)")
+                        subscriber.putNext(value)
+                    },
+                    error: { error in
+                        print("Debug - \(identifier): Error event - \(error)")
+                        subscriber.putError(error)
+                    },
+                    completed: {
+                        print("Debug - \(identifier): Completed event")
+                        subscriber.putCompletion()
+                    }
+                )
+                
+                return disposable
+            }
+        }
 }

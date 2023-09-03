@@ -94,6 +94,7 @@ private func calculateColors(explicitColorIndex: Int?, peerId: EnginePeer.Id?, i
             if hiddenByDefault {
                 backgroundColors = theme.chatList.unpinnedArchiveAvatarColor.backgroundColors.colors
             } else {
+                // HINT: вот эти цвета можно взять из темы
                 backgroundColors = theme.chatList.pinnedArchiveAvatarColor.backgroundColors.colors
             }
             colors = [backgroundColors.1, backgroundColors.0]
@@ -334,6 +335,8 @@ public final class AvatarNode: ASDisplayNode {
                 self.editOverlayNode?.setNeedsDisplay()
             }
         }
+        
+        // HINT: Здесь происходит анимация корзинки при отправке чата в Архив
         
         public func playArchiveAnimation() {
             guard let theme = self.theme else {

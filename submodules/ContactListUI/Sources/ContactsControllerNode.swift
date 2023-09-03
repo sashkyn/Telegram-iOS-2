@@ -357,6 +357,8 @@ final class ContactsControllerNode: ASDisplayNode, UIGestureRecognizerDelegate {
                 openStatusSetup: { _ in
                 },
                 allowAutomaticOrder: {
+                },
+                insertArchiveItem: {
                 }
             )),
             environment: {},

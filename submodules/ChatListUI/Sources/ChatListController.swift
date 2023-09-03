@@ -79,6 +79,8 @@ private final class ContextControllerContentSourceImpl: ContextControllerContent
     }
 }
 
+// HINT: главный контроллер списка чатов
+
 public class ChatListControllerImpl: TelegramBaseController, ChatListController {
     private var validLayout: ContainerViewLayout?
     
@@ -5227,6 +5229,8 @@ public class ChatListControllerImpl: TelegramBaseController, ChatListController 
             })
         }
     }
+    
+    // HINT: архивирование чатов здесь
     
     func archiveChats(peerIds: [PeerId]) {
         guard !peerIds.isEmpty else {
